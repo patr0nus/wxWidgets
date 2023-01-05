@@ -25,7 +25,7 @@
 #include "wx/filename.h"
 #include "wx/filepicker.h"
 
-#include "wx/scopedptr.h"
+#include "wx/windowptr.h"
 
 
 // ============================================================================
@@ -89,16 +89,20 @@ bool wxGenericFileDirButton::Create(wxWindow *parent,
 
 void wxGenericFileDirButton::OnButtonClick(wxCommandEvent& WXUNUSED(ev))
 {
-    wxScopedPtr<wxDialog> p(CreateDialog());
-    if (p->ShowModal() == wxID_OK)
-    {
-        // save updated path in m_path
-        UpdatePathFromDialog(p.get());
-
-        // fire an event
-        wxFileDirPickerEvent event(GetEventType(), this, GetId(), m_path);
-        GetEventHandler()->ProcessEvent(event);
-    }
+    wxWindowPtr<wxDialog> p(CreateDialog());
+    wxWeakRef<wxGenericFileDirButton> weakThis(this);
+    p->ShowWindowModalThenDo([weakThis, p](int ret) {
+        wxGenericFileDirButton* me = weakThis.get();
+        if (me && ret == wxID_OK)
+        {
+            // save updated path in m_path
+            me->UpdatePathFromDialog(p.get());
+    
+            // fire an event
+            wxFileDirPickerEvent event(me->GetEventType(), me, me->GetId(), me->m_path);
+            me->GetEventHandler()->ProcessEvent(event);
+        }
+    });
 }
 
 void wxGenericFileDirButton::SetInitialDirectory(const wxString& dir)
