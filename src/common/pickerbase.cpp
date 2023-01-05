@@ -102,8 +102,12 @@ bool wxPickerBase::CreateBase(wxWindow *parent,
 void wxPickerBase::PostCreation()
 {
     // the picker grows in the major direction only if there is no text control
-    m_sizer->Add(m_picker,
-                 wxSizerFlags(HasTextCtrl() ? 0 : 1).CentreVertical());
+    wxSizerFlags sizerFlags(HasTextCtrl() ? 0 : 1);
+    sizerFlags.CentreVertical();
+#ifdef __WXMAC__
+    sizerFlags.Border(wxRIGHT, 1);
+#endif
+    m_sizer->Add(m_picker, sizerFlags);
 
     // For aesthetic reasons, make sure the picker is at least as high as the
     // associated text control and is always at least square, unless we are
